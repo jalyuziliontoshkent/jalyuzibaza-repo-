@@ -1,0 +1,235 @@
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#2563EB" />
+    <title>Jalyuzi ERP Telegram Mini App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <button class="icon-button" id="refreshButton" type="button" aria-label="Yangilash">
+          <i data-lucide="refresh-cw"></i>
+        </button>
+        <div class="brand-block">
+          <span class="brand-mark">J</span>
+          <div>
+            <p>Jalyuzi ERP</p>
+            <h1 id="screenTitle">Bosh sahifa</h1>
+          </div>
+        </div>
+        <button class="icon-button" id="settingsButton" type="button" aria-label="Sozlamalar">
+          <i data-lucide="settings-2"></i>
+        </button>
+      </header>
+
+      <section class="user-panel">
+        <div>
+          <p class="muted">Xush kelibsiz</p>
+          <strong id="userName">Telegram foydalanuvchi</strong>
+        </div>
+        <button class="role-pill" id="roleToggle" type="button">Admin</button>
+      </section>
+
+      <section class="sync-strip" id="syncStrip">
+        <span id="apiModeDot"></span>
+        <p id="syncStatus">Demo rejim</p>
+      </section>
+
+      <section class="view active" id="dashboardView" data-title="Bosh sahifa"></section>
+      <section class="view" id="productsView" data-title="Mahsulotlar"></section>
+      <section class="view" id="blocksView" data-title="Bloklar"></section>
+      <section class="view" id="addView" data-title="Qo'shish"></section>
+      <section class="view" id="sellView" data-title="Sotish"></section>
+      <section class="view" id="reportsView" data-title="Hisobot"></section>
+
+      <nav class="bottom-nav" aria-label="Asosiy navigatsiya">
+        <button class="nav-item active" type="button" data-route="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Home</span>
+        </button>
+        <button class="nav-item" type="button" data-route="products">
+          <i data-lucide="boxes"></i>
+          <span>Ombor</span>
+        </button>
+        <button class="nav-item" type="button" data-route="blocks">
+          <i data-lucide="map"></i>
+          <span>Bloklar</span>
+        </button>
+        <button class="nav-item nav-add" type="button" data-route="add">
+          <i data-lucide="plus"></i>
+          <span>Qo'shish</span>
+        </button>
+        <button class="nav-item" type="button" data-route="reports">
+          <i data-lucide="chart-no-axes-combined"></i>
+          <span>Hisobot</span>
+        </button>
+      </nav>
+    </main>
+
+    <div class="modal-backdrop" id="modalBackdrop" hidden>
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-header">
+          <div>
+            <p class="muted" id="modalKicker">Tasdiqlash</p>
+            <h2 id="modalTitle">Amalni tasdiqlang</h2>
+          </div>
+          <button class="icon-button" id="modalClose" type="button" aria-label="Yopish">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div id="modalBody"></div>
+      </section>
+    </div>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+    <div class="loader-overlay" id="loaderOverlay" hidden>
+      <div class="loader-card">
+        <span class="spinner"></span>
+        <strong>Yuklanmoqda...</strong>
+      </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+=======
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Jalyuzi ERP · Warehouse Blocks</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --card: #1f2937;
+        --muted: #94a3b8;
+        --text: #e5e7eb;
+        --accent: #22c55e;
+        --danger: #ef4444;
+        --border: #334155;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+        color: var(--text);
+      }
+      .app { max-width: 720px; margin: 0 auto; padding-bottom: 88px; }
+      .sticky-header {
+        position: sticky; top: 0; z-index: 30; background: rgba(15, 23, 42, 0.96);
+        backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 12px;
+      }
+      .search {
+        width: 100%; border-radius: 14px; border: 1px solid var(--border); background: var(--panel); color: var(--text);
+        padding: 13px 14px; font-size: 15px;
+      }
+      .block-nav { display: flex; gap: 8px; overflow-x: auto; padding: 12px; scroll-behavior: smooth; }
+      .chip { border: 1px solid var(--border); color: var(--text); background: var(--panel); border-radius: 999px; padding: 8px 13px; font-weight: 700; white-space: nowrap; }
+      .chip.active { border-color: var(--accent); box-shadow: 0 0 0 2px #14532d; }
+      .content { padding: 12px; }
+      .skeleton { height: 96px; border-radius: 14px; margin-bottom: 12px; background: linear-gradient(90deg,#1e293b,#334155,#1e293b); animation: pulse 1.3s infinite; }
+      @keyframes pulse { 0%{opacity:.55}50%{opacity:1}100%{opacity:.55}}
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; margin-bottom: 12px; }
+      .topline, .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .name { font-size: 16px; font-weight: 800; }
+      .code { color: var(--muted); font-size: 13px; }
+      .badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+      .qty { margin-top: 8px; font-weight: 700; }
+      .location { margin-top: 8px; color: #cbd5e1; font-size: 13px; }
+      .low { background: #7f1d1d; color: #fecaca; }
+      .empty { text-align:center; color: var(--muted); padding: 36px 8px; }
+      .admin-toggle { position: fixed; right: 12px; bottom: 14px; border: none; border-radius: 999px; padding: 12px 16px; background: var(--accent); color: #052e16; font-weight: 800; }
+      .admin { position: fixed; inset: 0; background: rgba(2,6,23,.94); z-index: 40; display:none; }
+      .admin.open { display:block; }
+      .admin-body { max-width: 720px; margin: 0 auto; padding: 16px 12px 40px; }
+      .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+      .row { display:grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+      input, select, textarea, button { font: inherit; }
+      .input { width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:#0b1220; color:var(--text); }
+      .btn { border:0; border-radius:10px; padding:10px 12px; font-weight:700; }
+      .btn.primary { background: var(--accent); color:#052e16; }
+      .btn.danger { background: var(--danger); color: #fff; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="sticky-header">
+        <input id="searchInput" class="search" placeholder="Search by name, code, block..." />
+      </header>
+      <nav id="blockNav" class="block-nav"></nav>
+      <main id="productList" class="content"></main>
+    </div>
+
+    <button id="adminBtn" class="admin-toggle">Admin</button>
+    <section id="adminPanel" class="admin">
+      <div class="admin-body">
+        <div class="panel">
+          <h3>Block Management</h3>
+          <form id="blockForm">
+            <div class="row">
+              <input name="name" class="input" placeholder="Block letter (A)" required maxlength="2" />
+              <input name="priority" class="input" placeholder="Priority (high)" required />
+            </div>
+            <input name="description" class="input" placeholder="Description" required style="margin-top:8px" />
+            <input name="color" type="color" class="input" value="#22c55e" style="margin-top:8px" />
+            <button class="btn primary" style="margin-top:8px">Save Block</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h3>Add Product</h3>
+          <form id="productForm">
+            <input name="name" class="input" placeholder="Product name" required />
+            <div class="row" style="margin-top:8px">
+              <input name="code" class="input" placeholder="Code" required />
+              <input name="quantity" class="input" type="number" min="0" placeholder="Qty" required />
+            </div>
+            <div class="row" style="margin-top:8px">
+              <input name="unit" class="input" placeholder="Unit" required />
+              <select name="block" id="productBlock" class="input" required></select>
+            </div>
+            <input name="location_note" class="input" placeholder="Location note (Shelf A3)" style="margin-top:8px" />
+            <button class="btn primary" style="margin-top:8px">Add Product</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h3>Bulk Move Products</h3>
+          <form id="bulkForm" class="row">
+            <select name="from" id="bulkFrom" class="input" required></select>
+            <select name="to" id="bulkTo" class="input" required></select>
+            <button class="btn primary" style="grid-column: span 2;">Move</button>
+          </form>
+        </div>
+        <button id="closeAdmin" class="btn danger">Close</button>
+      </div>
+    </section>
+
+    <script type="module" src="app.js"></script>
+<<<<<<< ours
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+  </body>
+</html>

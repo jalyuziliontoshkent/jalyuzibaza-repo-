@@ -41,6 +41,8 @@ export interface UISale {
   sellerName: string;
   note: string;
   date: string;
+  unitPrice?: number;
+  totalValue?: number;
 }
 
 interface Toast {

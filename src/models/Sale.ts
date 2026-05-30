@@ -8,6 +8,8 @@ export interface ISale extends Document {
   sellerName: string;
   note: string;
   date: string;
+  unitPrice?: number;
+  totalValue?: number;
 }
 
 const SaleSchema: Schema = new Schema({
@@ -18,6 +20,8 @@ const SaleSchema: Schema = new Schema({
   sellerName: { type: String, required: true },
   note: { type: String, required: false, default: '' },
   date: { type: String, required: true },
+  unitPrice: { type: Number, required: false, default: 0, min: 0 },
+  totalValue: { type: Number, required: false, default: 0, min: 0 },
 });
 
 export const Sale: Model<ISale> = mongoose.models.Sale || mongoose.model<ISale>('Sale', SaleSchema);

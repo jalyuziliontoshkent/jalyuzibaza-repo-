@@ -121,6 +121,8 @@ export async function getSales() {
   return JSON.parse(JSON.stringify(sales)).map((sale: any) => ({
     ...sale,
     note: sale.note ?? '',
+    unitPrice: sale.unitPrice ?? 0,
+    totalValue: sale.totalValue ?? (sale.quantity * (sale.unitPrice ?? 0)),
   }));
 }
 
@@ -141,6 +143,8 @@ export async function recordSale(productId: string, quantity: number, sellerName
     sellerName,
     note,
     date: new Date().toISOString(),
+    unitPrice: product.sellPrice ?? 0,
+    totalValue: quantity * (product.sellPrice ?? 0),
   });
   await newSale.save();
   revalidatePath('/');

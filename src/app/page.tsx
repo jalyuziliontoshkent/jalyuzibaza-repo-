@@ -35,7 +35,7 @@ function Badge({ color, children }: { color: string; children: React.ReactNode }
 
 // ─── SELL MODAL ───────────────────────────────────────────────────────────────
 
-function SellModal({ product, onClose }: { product: UIProduct; onClose: () => void }) {
+function SellModal({ product, onClose, onSaleComplete }: { product: UIProduct; onClose: () => void; onSaleComplete: (sale: { productName: string; quantity: number; unit: string; sellerName: string; note: string; date: string; totalValue: number; }) => void }) {
   const { recordSale, state } = useStore();
   const [qty, setQty] = useState(product.rollWidth > 0 ? product.rollWidth : 1);
   const [sellMode, setSellMode] = useState<'quantity' | 'rolls'>(product.rollWidth > 0 ? 'rolls' : 'quantity');
@@ -52,6 +52,15 @@ function SellModal({ product, onClose }: { product: UIProduct; onClose: () => vo
     setLoading(true);
     try {
       await recordSale(product._id, actualQty, seller.trim(), note.trim());
+      onSaleComplete({
+        productName: product.name,
+        quantity: actualQty,
+        unit: product.unit,
+        sellerName: seller.trim(),
+        note: note.trim(),
+        date: new Date().toISOString(),
+        totalValue: actualQty * (product.sellPrice ?? 0),
+      });
       onClose();
     } catch { setLoading(false); }
   };
@@ -234,17 +243,30 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
             </div>
             <div className="field">
               <label>O'lchov *</label>
-              <input value={form.unit} onChange={e => set('unit', e.target.value)} placeholder="dona, kg, m" />
+              <select value={['dona','metr','kg','m','roll'].includes(form.unit) ? form.unit : 'other'} onChange={e => {
+                const v = e.target.value;
+                if (v === 'other') set('unit', ''); else set('unit', v);
+              }} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)' }}>
+                <option value="dona">dona</option>
+                <option value="metr">metr</option>
+                <option value="kg">kg</option>
+                <option value="m">m</option>
+                <option value="roll">rulon</option>
+                <option value="other">Boshqa...</option>
+              </select>
+              {(!['dona','metr','kg','m','roll'].includes(form.unit)) && (
+                <input value={form.unit} onChange={e => set('unit', e.target.value)} placeholder="Masalan: dona yoki metr" style={{ marginTop: 8 }} />
+              )}
             </div>
           </div>
           <div className="amount-grid">
             <div className="field">
-              <label>Kirish narxi (so'm)</label>
-              <input value={form.costPrice} onChange={e => set('costPrice', Number(e.target.value))} placeholder="Masalan: 45000" />
+              <label>Kirish narxi ($)</label>
+              <input type="number" step="0.01" value={form.costPrice} onChange={e => set('costPrice', Number(e.target.value))} placeholder="Masalan: 1.20" />
             </div>
             <div className="field">
-              <label>Sotish narxi (so'm)</label>
-              <input value={form.sellPrice} onChange={e => set('sellPrice', Number(e.target.value))} placeholder="Masalan: 72000" />
+              <label>Sotish narxi ($)</label>
+              <input type="number" step="0.01" value={form.sellPrice} onChange={e => set('sellPrice', Number(e.target.value))} placeholder="Masalan: 22.40" />
             </div>
           </div>
           <div className="amount-grid">
@@ -375,6 +397,81 @@ function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onCon
   );
 }
 
+function SaleReceiptModal({ receipt, onClose }: { receipt: { productName: string; quantity: number; unit: string; sellerName: string; note: string; date: string; totalValue?: number; unitPrice?: number; }; onClose: () => void }) {
+  const printReceipt = () => {
+    const unitPrice = receipt.unitPrice ?? (receipt.totalValue ? receipt.totalValue / receipt.quantity : 0);
+    const total = receipt.totalValue ?? (unitPrice * receipt.quantity);
+    const html = `
+      <html>
+        <head>
+          <title>Receipt</title>
+          <style>
+            body { font-family: Arial, Helvetica, sans-serif; padding:20px; }
+            .receipt { max-width:320px; margin:0 auto; }
+            h2 { text-align:center; }
+            .line { display:flex; justify-content:space-between; margin:8px 0; }
+            .muted { color:#666; font-size:12px; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <h2>Receipt</h2>
+            <p class="muted">Date: ${new Date(receipt.date).toLocaleString()}</p>
+            <div class="line"><span>Product</span><strong>${receipt.productName}</strong></div>
+            <div class="line"><span>Qty</span><strong>${receipt.quantity} ${receipt.unit}</strong></div>
+            <div class="line"><span>Unit</span><strong>$${unitPrice.toFixed(2)}</strong></div>
+            <div class="line"><span>Total</span><strong>$${total.toFixed(2)}</strong></div>
+            <p class="muted">Seller: ${receipt.sellerName}</p>
+            ${receipt.note ? `<p class="muted">Note: ${receipt.note}</p>` : ''}
+          </div>
+        </body>
+      </html>
+    `;
+
+    const w = window.open('', '_blank', 'width=400,height=600');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); w.close(); }, 300);
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <section className="modal-card">
+        <div className="modal-header">
+          <div>
+            <p className="muted">Chek</p>
+            <h2>{receipt.productName}</h2>
+            <p className="muted" style={{ fontSize: 12 }}>{new Date(receipt.date).toLocaleString()}</p>
+          </div>
+          <button className="icon-button" onClick={onClose}><X /></button>
+        </div>
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div>Miqdor</div>
+            <div><strong>{receipt.quantity} {receipt.unit}</strong></div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div>Birlik narxi</div>
+            <div><strong>${(receipt.unitPrice ?? (receipt.totalValue ? receipt.totalValue / receipt.quantity : 0)).toFixed(2)}</strong></div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div>Jami</div>
+            <div><strong>${(receipt.totalValue ?? ((receipt.unitPrice ?? 0) * receipt.quantity)).toFixed(2)}</strong></div>
+          </div>
+          {receipt.note && <p className="muted">Izoh: {receipt.note}</p>}
+
+          <div className="form-actions" style={{ marginTop: 8 }}>
+            <button className="ghost-button" onClick={onClose}>Yopish</button>
+            <button className="primary-button" onClick={printReceipt}>Print</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -386,6 +483,7 @@ export default function Home() {
   const [editBlockTarget, setEditBlockTarget] = useState<UIBlock | null>(null);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [saleReceipt, setSaleReceipt] = useState<{ productName: string; quantity: number; unit: string; sellerName: string; note: string; date: string; totalValue?: number; unitPrice?: number; } | null>(null);
 
   const { blocks, products, sales, role, user, toast, loading, selectedBlock, query } = state;
 
@@ -398,9 +496,17 @@ export default function Home() {
 
   const totalQty = products.reduce((s, p) => s + p.quantity, 0);
   const totalInventoryValue = products.reduce((s, p) => s + p.quantity * (p.sellPrice ?? 0), 0);
+  const totalRolls = products.reduce((s, p) => s + (p.rollCount ?? 0), 0);
   const lowStockCount = products.filter(p => p.quantity > 0 && p.quantity < 10).length;
   const outOfStockCount = products.filter(p => p.quantity === 0).length;
   const todaySales = sales.filter(s => new Date(s.date).toDateString() === new Date().toDateString());
+  const topSelling = Object.values(sales.reduce((acc: Record<string, { productName: string; quantity: number; unit: string }>, sale) => {
+    const current = acc[sale.productId] ?? { productName: sale.productName, quantity: 0, unit: sale.unit };
+    current.quantity += sale.quantity;
+    acc[sale.productId] = current;
+    return acc;
+  }, {})).sort((a, b) => b.quantity - a.quantity).slice(0, 5);
+  const lowStockProducts = products.filter(p => p.quantity > 0 && p.quantity < 10).sort((a, b) => a.quantity - b.quantity).slice(0, 5);
 
   const tabLabel: Record<string, string> = {
     dashboard: 'Bosh sahifa', products: 'Mahsulotlar',
@@ -469,8 +575,12 @@ export default function Home() {
                 <strong>{totalQty.toLocaleString()}</strong>
               </div>
               <div className="stat-card">
+                <p className="muted">Jami rulonlar</p>
+                <strong>{totalRolls.toLocaleString()}</strong>
+              </div>
+              <div className="stat-card">
                 <p className="muted">Umumiy inventar qiymati</p>
-                <strong>{totalInventoryValue.toLocaleString()} so'm</strong>
+                <strong>${totalInventoryValue.toLocaleString()}</strong>
               </div>
               <div className="stat-card">
                 <p className="muted">Bloklar</p>
@@ -482,13 +592,29 @@ export default function Home() {
               </div>
             </div>
 
-            {(lowStockCount > 0 || outOfStockCount > 0) && (
-              <div className="panel" style={{ borderLeft: '4px solid #ef4444', background: '#ef444411' }}>
-                <p style={{ fontWeight: 600, color: '#ef4444', marginBottom: 4 }}>⚠️ Diqqat!</p>
-                {outOfStockCount > 0 && <p className="muted">{outOfStockCount} ta mahsulot tugagan</p>}
-                {lowStockCount > 0 && <p className="muted">{lowStockCount} ta mahsulot kam qolgan (&lt;10)</p>}
+            <div className="panel" style={{ borderLeft: '4px solid #38bdf8', background: '#dbeafe' }}>
+              <p style={{ fontWeight: 600, color: '#0f172a', marginBottom: 8 }}>Dashboard tezkor statistikasi</p>
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 180, padding: 12, borderRadius: 16, background: '#fff', boxShadow: '0 1px 4px rgba(15,23,42,.06)' }}>
+                    <p className="muted">Eng ko'p sotilganlar</p>
+                    {topSelling.length === 0 ? <p className="muted" style={{ marginTop: 8 }}>Hali sotuvlar yo'q</p> : topSelling.map((item, index) => (
+                      <p key={item.productName} style={{ margin: '6px 0', fontSize: 13 }}><strong>{index + 1}.</strong> {item.productName} - {item.quantity} {item.unit}</p>
+                    ))}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 180, padding: 12, borderRadius: 16, background: '#fff', boxShadow: '0 1px 4px rgba(15,23,42,.06)' }}>
+                    <p className="muted">Kam qolgan mahsulotlar</p>
+                    {lowStockProducts.length === 0 ? <p className="muted" style={{ marginTop: 8 }}>Kam qolgan mahsulot yo'q</p> : lowStockProducts.map(item => (
+                      <p key={item._id} style={{ margin: '6px 0', fontSize: 13 }}><strong>{item.name}</strong> - {item.quantity} {item.unit}</p>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <button className="secondary-button" onClick={() => setActiveTab('products')} style={{ flex: 1, minWidth: 180 }}>Mahsulotlar bo‘limiga o'tish</button>
+                  <button className="secondary-button" onClick={() => setActiveTab('reports')} style={{ flex: 1, minWidth: 180 }}>Sotuvlar hisobotiga o'tish</button>
+                </div>
               </div>
-            )}
+            </div>
           </section>
         )}
 
@@ -526,7 +652,7 @@ export default function Home() {
                       <h3>{p.name}</h3>
                     </div>
                     <p className="product-subtitle">
-                      Kod: {p.code} • Kirish: {(p.costPrice ?? 0).toLocaleString()} so'm • Sotish: {(p.sellPrice ?? 0).toLocaleString()} so'm
+                      Kod: {p.code} • Kirish: ${(p.costPrice ?? 0).toLocaleString()} • Sotish: ${(p.sellPrice ?? 0).toLocaleString()}
                     </p>
                     <div className="badge-row">
                       <span className="badge neutral"><Package size={12} /> {p.block}</span>
@@ -658,6 +784,9 @@ export default function Home() {
                     <div style={{ textAlign: 'right' }}>
                       <strong style={{ color: '#22c55e' }}>−{s.quantity}</strong>
                       <p className="muted" style={{ fontSize: 11 }}>{s.unit}</p>
+                      <div style={{ marginTop: 8 }}>
+                        <button className="ghost-button" onClick={() => setSaleReceipt({ productName: s.productName, quantity: s.quantity, unit: s.unit, sellerName: s.sellerName, note: s.note ?? '', date: s.date, totalValue: s.totalValue ?? 0, unitPrice: s.unitPrice ?? 0 })}>Chek</button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -684,12 +813,13 @@ export default function Home() {
       </main>
 
       {/* MODALS */}
-      {sellTarget && <SellModal product={sellTarget} onClose={() => setSellTarget(null)} />}
+      {sellTarget && <SellModal product={sellTarget} onClose={() => setSellTarget(null)} onSaleComplete={(sale) => setSaleReceipt(sale)} />}
       {addProductOpen && <ProductModal onClose={() => setAddProductOpen(false)} />}
       {editProduct && <ProductModal product={editProduct} onClose={() => setEditProduct(null)} />}
       {addBlockOpen && <BlockModal onClose={() => setAddBlockOpen(false)} />}
       {editBlockTarget && <BlockModal block={editBlockTarget} onClose={() => setEditBlockTarget(null)} />}
       {confirmDelete && <ConfirmModal message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(null)} />}
+      {saleReceipt && <SaleReceiptModal receipt={saleReceipt} onClose={() => setSaleReceipt(null)} />}
 
       {/* TOAST */}
       {toast.title && (

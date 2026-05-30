@@ -6,6 +6,7 @@ import {
   postBlock, putBlock, deleteBlock,
   postProduct, putProduct, deleteProduct,
   recordSale as apiRecordSale,
+  deleteSale as apiDeleteSale,
   clearSales as apiClearSales,
 } from '@/app/actions';
 
@@ -80,6 +81,7 @@ interface StoreContextType {
   removeProduct: (id: string) => Promise<void>;
   // Sale actions
   recordSale: (productId: string, quantity: number, sellerName: string, note: string) => Promise<void>;
+  deleteSale: (saleId: string) => Promise<void>;
   clearSales: () => Promise<void>;
 }
 
@@ -206,6 +208,19 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const deleteSale = async (saleId: string) => {
+    setState(prev => ({ ...prev, loading: true }));
+    try {
+      await apiDeleteSale(saleId);
+      await refresh();
+      showToast('O\'chirildi', 'Sotuv ro\'yxatdan o\'chirildi', 'success');
+    } catch (e: any) {
+      setState(prev => ({ ...prev, loading: false }));
+      showToast('Xatolik', e.message || 'O\'chirishda xatolik', 'error');
+      throw e;
+    }
+  };
+
   const clearSales = async () => {
     setState(prev => ({ ...prev, loading: true }));
     try {
@@ -229,7 +244,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
       showToast, refresh,
       addBlock, editBlock, removeBlock,
       addProduct, editProduct, removeProduct,
-      recordSale, clearSales,
+      recordSale, deleteSale, clearSales,
     }}>
       {children}
     </StoreContext.Provider>

@@ -155,3 +155,9 @@ export async function clearSales() {
   await Sale.deleteMany({});
   revalidatePath('/');
 }
+
+export async function deleteSale(id: string) {
+  await connectToDatabase();
+  await Sale.findByIdAndDelete(id);
+  revalidatePath('/');
+}

@@ -495,7 +495,7 @@ function SaleReceiptModal({ receipt, onClose }: { receipt: { productName: string
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const { state, setQuery, setSelectedBlock, setRole, refresh, removeBlock, removeProduct, clearSales } = useStore();
+  const { state, setQuery, setSelectedBlock, setRole, refresh, removeBlock, removeProduct, deleteSale, clearSales } = useStore();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sellTarget, setSellTarget] = useState<UIProduct | null>(null);
   const [editProduct, setEditProduct] = useState<UIProduct | null>(null);
@@ -804,8 +804,9 @@ export default function Home() {
                     <div style={{ textAlign: 'right' }}>
                       <strong style={{ color: '#22c55e' }}>−{s.quantity}</strong>
                       <p className="muted" style={{ fontSize: 11 }}>{s.unit}</p>
-                      <div style={{ marginTop: 8 }}>
+                      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                         <button className="ghost-button" onClick={() => setSaleReceipt({ productName: s.productName, quantity: s.quantity, unit: s.unit, sellerName: s.sellerName, note: s.note ?? '', date: s.date, totalValue: s.totalValue ?? 0, unitPrice: s.unitPrice ?? 0 })}>Chek</button>
+                        <button className="ghost-button" style={{ color: '#ef4444' }} onClick={() => setConfirmDelete({ message: `"${s.productName}" sotuvini oʻchirilsinmi?`, onConfirm: () => { deleteSale(s._id); setConfirmDelete(null); } })}>Oʻchirish</button>
                       </div>
                     </div>
                   </div>

@@ -39,13 +39,14 @@ function SellModal({ product, onClose }: { product: UIProduct; onClose: () => vo
   const { recordSale, state } = useStore();
   const [qty, setQty] = useState(1);
   const [seller, setSeller] = useState(state.user.name);
+  const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSell = async () => {
     if (!seller.trim()) return;
     setLoading(true);
     try {
-      await recordSale(product._id, qty, seller.trim());
+      await recordSale(product._id, qty, seller.trim(), note.trim());
       onClose();
     } catch { setLoading(false); }
   };
@@ -65,6 +66,10 @@ function SellModal({ product, onClose }: { product: UIProduct; onClose: () => vo
           <div className="field">
             <label>Sotuvchi ismi</label>
             <input value={seller} onChange={e => setSeller(e.target.value)} placeholder="Ism familiya" />
+          </div>
+          <div className="field">
+            <label>Izoh / status</label>
+            <input value={note} onChange={e => setNote(e.target.value)} placeholder="Masalan: sexga chiqib ketti" />
           </div>
           <div className="field">
             <label>Miqdor ({product.unit})</label>
@@ -96,7 +101,9 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
     quantity: product?.quantity ?? 0,
     unit: product?.unit ?? 'dona',
     block: product?.block ?? (state.blocks[0]?.name ?? ''),
-    price: product?.price ?? 0,
+    costPrice: product?.costPrice ?? 0,
+    sellPrice: product?.sellPrice ?? ((product as any)?.price ?? 0),
+    status: product?.status ?? 'omborda',
     location_note: product?.location_note ?? '',
   });
   const [loading, setLoading] = useState(false);
@@ -108,9 +115,21 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
     setLoading(true);
     try {
       if (product) {
-        await editProduct(product._id, { ...form, quantity: Number(form.quantity), price: Number(form.price) });
+        await editProduct(product._id, {
+          ...form,
+          quantity: Number(form.quantity),
+          costPrice: Number(form.costPrice),
+          sellPrice: Number(form.sellPrice),
+          status: form.status,
+        });
       } else {
-        await addProduct({ ...form, quantity: Number(form.quantity), price: Number(form.price) });
+        await addProduct({
+          ...form,
+          quantity: Number(form.quantity),
+          costPrice: Number(form.costPrice),
+          sellPrice: Number(form.sellPrice),
+          status: form.status,
+        });
       }
       onClose();
     } catch { setLoading(false); }
@@ -138,15 +157,13 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
             </div>
             <div className="field">
               <label>Blok *</label>
-              <select value={form.block} onChange={e => set('block', e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)' }}>
-                {state.blocks.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}
-              </select>
+              <input value={form.block} onChange={e => set('block', e.target.value)} placeholder="Masalan: A-Blok" />
             </div>
           </div>
           <div className="amount-grid">
             <div className="field">
               <label>Miqdori *</label>
-              <input type="number" min="0" value={form.quantity} onChange={e => set('quantity', Number(e.target.value))} />
+              <input value={form.quantity} onChange={e => set('quantity', Number(e.target.value))} placeholder="Masalan: 10" />
             </div>
             <div className="field">
               <label>O'lchov *</label>
@@ -155,13 +172,23 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
           </div>
           <div className="amount-grid">
             <div className="field">
-              <label>Narxi (so'm)</label>
-              <input type="number" min="0" value={form.price} onChange={e => set('price', Number(e.target.value))} />
+              <label>Kirish narxi (so'm)</label>
+              <input value={form.costPrice} onChange={e => set('costPrice', Number(e.target.value))} placeholder="Masalan: 45000" />
             </div>
             <div className="field">
-              <label>Joylashuv eslatmasi</label>
-              <input value={form.location_note} onChange={e => set('location_note', e.target.value)} placeholder="Masalan: 3-qator, 2-javon" />
+              <label>Sotish narxi (so'm)</label>
+              <input value={form.sellPrice} onChange={e => set('sellPrice', Number(e.target.value))} placeholder="Masalan: 72000" />
             </div>
+          </div>
+          <div className="amount-grid">
+            <div className="field">
+              <label>Status</label>
+              <input value={form.status} onChange={e => set('status', e.target.value)} placeholder="Masalan: omborda" />
+            </div>
+          </div>
+          <div className="field">
+            <label>Joylashuv eslatmasi</label>
+            <input value={form.location_note} onChange={e => set('location_note', e.target.value)} placeholder="Masalan: 3-qator, 2-javon" />
           </div>
           <div className="form-actions" style={{ marginTop: 8 }}>
             <button className="ghost-button" onClick={onClose}>Bekor</button>
@@ -286,12 +313,12 @@ export default function Home() {
   const filteredProducts = products.filter(p => {
     const q = query.trim().toLowerCase();
     const matchBlock = selectedBlock === 'ALL' || p.block === selectedBlock;
-    const hay = `${p.name} ${p.code} ${p.block} ${p.location_note}`.toLowerCase();
+    const hay = `${p.name} ${p.code} ${p.block} ${p.location_note} ${p.status}`.toLowerCase();
     return matchBlock && (!q || hay.includes(q));
   });
 
   const totalQty = products.reduce((s, p) => s + p.quantity, 0);
-  const totalInventoryValue = products.reduce((s, p) => s + p.quantity * (p.price ?? 0), 0);
+  const totalInventoryValue = products.reduce((s, p) => s + p.quantity * (p.sellPrice ?? 0), 0);
   const lowStockCount = products.filter(p => p.quantity > 0 && p.quantity < 10).length;
   const outOfStockCount = products.filter(p => p.quantity === 0).length;
   const todaySales = sales.filter(s => new Date(s.date).toDateString() === new Date().toDateString());
@@ -419,9 +446,14 @@ export default function Home() {
                     <div className="product-title-row">
                       <h3>{p.name}</h3>
                     </div>
-                    <p className="product-subtitle">Kod: {p.code} • Narxi: {(p.price ?? 0).toLocaleString()} so'm</p>
+                    <p className="product-subtitle">
+                      Kod: {p.code} • Kirish: {(p.costPrice ?? 0).toLocaleString()} so'm • Sotish: {(p.sellPrice ?? 0).toLocaleString()} so'm
+                    </p>
                     <div className="badge-row">
                       <span className="badge neutral"><Package size={12} /> {p.block}</span>
+                      <span className="badge" style={{ fontSize: 11, background: p.status === 'omborda' ? 'rgba(148,163,184,.12)' : p.status === 'sotildi' ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.12)', color: p.status === 'sotildi' ? '#16a34a' : p.status === 'omborda' ? '#64748b' : '#b45309' }}>
+                        {p.status}
+                      </span>
                       {p.location_note && <span className="badge neutral" style={{ fontSize: 11 }}>{p.location_note}</span>}
                     </div>
                   </div>
@@ -535,6 +567,7 @@ export default function Home() {
                       <p className="muted" style={{ fontSize: 12, marginTop: 2 }}>
                         {s.sellerName} • {new Date(s.date).toLocaleDateString('uz-UZ')} {new Date(s.date).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
                       </p>
+                      {s.note && <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Izoh: {s.note}</p>}
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <strong style={{ color: '#22c55e' }}>−{s.quantity}</strong>

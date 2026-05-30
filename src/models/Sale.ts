@@ -6,6 +6,7 @@ export interface ISale extends Document {
   quantity: number;
   unit: string;
   sellerName: string;
+  note: string;
   date: string;
 }
 
@@ -15,6 +16,7 @@ const SaleSchema: Schema = new Schema({
   quantity: { type: Number, required: true, min: 1 },
   unit: { type: String, required: true },
   sellerName: { type: String, required: true },
+  note: { type: String, required: false, default: '' },
   date: { type: String, required: true },
 });
 

@@ -46,7 +46,9 @@ export async function getProducts() {
   const products = await Product.find({}).sort({ createdAt: -1 }).lean();
   return JSON.parse(JSON.stringify(products)).map((product: any) => ({
     ...product,
-    price: product.price ?? 0,
+    costPrice: product.costPrice ?? 0,
+    sellPrice: product.sellPrice ?? product.price ?? 0,
+    status: product.status ?? 'omborda',
   }));
 }
 
@@ -57,7 +59,9 @@ export async function postProduct(payload: {
   unit: string;
   block: string;
   location_note: string;
-  price: number;
+  costPrice: number;
+  sellPrice: number;
+  status: string;
 }) {
   await connectToDatabase();
   const exists = await Product.findOne({ code: payload.code });
@@ -65,7 +69,8 @@ export async function postProduct(payload: {
   const newProduct = new Product({
     ...payload,
     quantity: Number(payload.quantity),
-    price: Number(payload.price ?? 0),
+    costPrice: Number(payload.costPrice ?? 0),
+    sellPrice: Number(payload.sellPrice ?? 0),
   });
   await newProduct.save();
   revalidatePath('/');
@@ -78,10 +83,12 @@ export async function putProduct(id: string, payload: {
   unit?: string;
   block?: string;
   location_note?: string;
-  price?: number;
+  costPrice?: number;
+  sellPrice?: number;
+  status?: string;
 }) {
   await connectToDatabase();
-  await Product.findByIdAndUpdate(id, { ...payload, quantity: Number(payload.quantity ?? 0), price: Number(payload.price ?? 0) }, { new: true });
+  await Product.findByIdAndUpdate(id, { ...payload, quantity: Number(payload.quantity ?? 0), costPrice: Number(payload.costPrice ?? 0), sellPrice: Number(payload.sellPrice ?? 0) }, { new: true });
   revalidatePath('/');
 }
 
@@ -102,10 +109,13 @@ export async function bulkMoveProducts(from: string, to: string) {
 export async function getSales() {
   await connectToDatabase();
   const sales = await Sale.find({}).sort({ date: -1 }).lean();
-  return JSON.parse(JSON.stringify(sales));
+  return JSON.parse(JSON.stringify(sales)).map((sale: any) => ({
+    ...sale,
+    note: sale.note ?? '',
+  }));
 }
 
-export async function recordSale(productId: string, quantity: number, sellerName: string) {
+export async function recordSale(productId: string, quantity: number, sellerName: string, note: string = '') {
   await connectToDatabase();
   const product = await Product.findById(productId);
   if (!product) throw new Error('Mahsulot topilmadi');
@@ -120,6 +130,7 @@ export async function recordSale(productId: string, quantity: number, sellerName
     quantity,
     unit: product.unit,
     sellerName,
+    note,
     date: new Date().toISOString(),
   });
   await newSale.save();

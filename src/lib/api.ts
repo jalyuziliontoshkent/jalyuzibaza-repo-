@@ -44,7 +44,10 @@ export async function deleteBlock(id: string) {
 export async function getProducts() {
   await connectToDatabase();
   const products = await Product.find({}).sort({ createdAt: -1 }).lean();
-  return JSON.parse(JSON.stringify(products));
+  return JSON.parse(JSON.stringify(products)).map((product: any) => ({
+    ...product,
+    price: product.price ?? 0,
+  }));
 }
 
 export async function postProduct(payload: {
@@ -54,6 +57,7 @@ export async function postProduct(payload: {
   unit: string;
   block: string;
   location_note: string;
+  price: number;
 }) {
   await connectToDatabase();
   const exists = await Product.findOne({ code: payload.code });
@@ -61,6 +65,7 @@ export async function postProduct(payload: {
   const newProduct = new Product({
     ...payload,
     quantity: Number(payload.quantity),
+    price: Number(payload.price ?? 0),
   });
   await newProduct.save();
   revalidatePath('/');
@@ -73,9 +78,10 @@ export async function putProduct(id: string, payload: {
   unit?: string;
   block?: string;
   location_note?: string;
+  price?: number;
 }) {
   await connectToDatabase();
-  await Product.findByIdAndUpdate(id, { ...payload, quantity: Number(payload.quantity ?? 0) }, { new: true });
+  await Product.findByIdAndUpdate(id, { ...payload, quantity: Number(payload.quantity ?? 0), price: Number(payload.price ?? 0) }, { new: true });
   revalidatePath('/');
 }
 

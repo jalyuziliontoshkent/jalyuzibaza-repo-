@@ -96,6 +96,7 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
     quantity: product?.quantity ?? 0,
     unit: product?.unit ?? 'dona',
     block: product?.block ?? (state.blocks[0]?.name ?? ''),
+    price: product?.price ?? 0,
     location_note: product?.location_note ?? '',
   });
   const [loading, setLoading] = useState(false);
@@ -107,9 +108,9 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
     setLoading(true);
     try {
       if (product) {
-        await editProduct(product._id, { ...form, quantity: Number(form.quantity) });
+        await editProduct(product._id, { ...form, quantity: Number(form.quantity), price: Number(form.price) });
       } else {
-        await addProduct({ ...form, quantity: Number(form.quantity) });
+        await addProduct({ ...form, quantity: Number(form.quantity), price: Number(form.price) });
       }
       onClose();
     } catch { setLoading(false); }
@@ -145,16 +146,22 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
           <div className="amount-grid">
             <div className="field">
               <label>Miqdori *</label>
-              <input type="number" min="0" value={form.quantity} onChange={e => set('quantity', e.target.value)} />
+              <input type="number" min="0" value={form.quantity} onChange={e => set('quantity', Number(e.target.value))} />
             </div>
             <div className="field">
               <label>O'lchov *</label>
               <input value={form.unit} onChange={e => set('unit', e.target.value)} placeholder="dona, kg, m" />
             </div>
           </div>
-          <div className="field">
-            <label>Joylashuv eslatmasi</label>
-            <input value={form.location_note} onChange={e => set('location_note', e.target.value)} placeholder="Masalan: 3-qator, 2-javon" />
+          <div className="amount-grid">
+            <div className="field">
+              <label>Narxi (so'm)</label>
+              <input type="number" min="0" value={form.price} onChange={e => set('price', Number(e.target.value))} />
+            </div>
+            <div className="field">
+              <label>Joylashuv eslatmasi</label>
+              <input value={form.location_note} onChange={e => set('location_note', e.target.value)} placeholder="Masalan: 3-qator, 2-javon" />
+            </div>
           </div>
           <div className="form-actions" style={{ marginTop: 8 }}>
             <button className="ghost-button" onClick={onClose}>Bekor</button>
@@ -284,6 +291,7 @@ export default function Home() {
   });
 
   const totalQty = products.reduce((s, p) => s + p.quantity, 0);
+  const totalInventoryValue = products.reduce((s, p) => s + p.quantity * (p.price ?? 0), 0);
   const lowStockCount = products.filter(p => p.quantity > 0 && p.quantity < 10).length;
   const outOfStockCount = products.filter(p => p.quantity === 0).length;
   const todaySales = sales.filter(s => new Date(s.date).toDateString() === new Date().toDateString());
@@ -355,6 +363,10 @@ export default function Home() {
                 <strong>{totalQty.toLocaleString()}</strong>
               </div>
               <div className="stat-card">
+                <p className="muted">Umumiy inventar qiymati</p>
+                <strong>{totalInventoryValue.toLocaleString()} so'm</strong>
+              </div>
+              <div className="stat-card">
                 <p className="muted">Bloklar</p>
                 <strong>{blocks.length} ta</strong>
               </div>
@@ -407,7 +419,7 @@ export default function Home() {
                     <div className="product-title-row">
                       <h3>{p.name}</h3>
                     </div>
-                    <p className="product-subtitle">Kod: {p.code}</p>
+                    <p className="product-subtitle">Kod: {p.code} • Narxi: {(p.price ?? 0).toLocaleString()} so'm</p>
                     <div className="badge-row">
                       <span className="badge neutral"><Package size={12} /> {p.block}</span>
                       {p.location_note && <span className="badge neutral" style={{ fontSize: 11 }}>{p.location_note}</span>}

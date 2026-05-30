@@ -25,6 +25,7 @@ export interface UIProduct {
   unit: string;
   block: string;
   location_note: string;
+  price: number;
 }
 
 export interface UISale {
@@ -67,8 +68,8 @@ interface StoreContextType {
   editBlock: (id: string, payload: { name?: string; description?: string; priority?: string; color?: string }) => Promise<void>;
   removeBlock: (id: string) => Promise<void>;
   // Product actions
-  addProduct: (payload: { name: string; code: string; quantity: number; unit: string; block: string; location_note: string }) => Promise<void>;
-  editProduct: (id: string, payload: { name?: string; code?: string; quantity?: number; unit?: string; block?: string; location_note?: string }) => Promise<void>;
+  addProduct: (payload: { name: string; code: string; quantity: number; unit: string; block: string; location_note: string; price: number }) => Promise<void>;
+  editProduct: (id: string, payload: { name?: string; code?: string; quantity?: number; unit?: string; block?: string; location_note?: string; price?: number }) => Promise<void>;
   removeProduct: (id: string) => Promise<void>;
   // Sale actions
   recordSale: (productId: string, quantity: number, sellerName: string) => Promise<void>;
@@ -146,7 +147,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // ── Product actions ────────────────────────────────────────────
-  const addProduct = async (payload: { name: string; code: string; quantity: number; unit: string; block: string; location_note: string }) => {
+  const addProduct = async (payload: { name: string; code: string; quantity: number; unit: string; block: string; location_note: string; price: number }) => {
     setState(prev => ({ ...prev, loading: true }));
     try {
       await postProduct(payload);
@@ -159,7 +160,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const editProduct = async (id: string, payload: { name?: string; code?: string; quantity?: number; unit?: string; block?: string; location_note?: string }) => {
+  const editProduct = async (id: string, payload: { name?: string; code?: string; quantity?: number; unit?: string; block?: string; location_note?: string; price?: number }) => {
     setState(prev => ({ ...prev, loading: true }));
     try {
       await putProduct(id, payload);

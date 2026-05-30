@@ -37,19 +37,21 @@ function Badge({ color, children }: { color: string; children: React.ReactNode }
 
 function SellModal({ product, onClose }: { product: UIProduct; onClose: () => void }) {
   const { recordSale, state } = useStore();
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(product.rollWidth > 0 ? product.rollWidth : 1);
+  const [sellMode, setSellMode] = useState<'quantity' | 'rolls'>(product.rollWidth > 0 ? 'rolls' : 'quantity');
   const [seller, setSeller] = useState(state.user.name);
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const rollQuantity = product.rollWidth > 0 ? Math.round(qty / product.rollWidth) : 0;
   const remainingRolls = product.rollWidth > 0 ? Math.round(product.quantity / product.rollWidth) : 0;
+  const actualQty = sellMode === 'rolls' ? (qty * (product.rollWidth || 1)) : qty;
+  const displayRolls = product.rollWidth > 0 ? Math.round(actualQty / product.rollWidth) : 0;
 
   const handleSell = async () => {
     if (!seller.trim()) return;
     setLoading(true);
     try {
-      await recordSale(product._id, qty, seller.trim(), note.trim());
+      await recordSale(product._id, actualQty, seller.trim(), note.trim());
       onClose();
     } catch { setLoading(false); }
   };
@@ -74,23 +76,75 @@ function SellModal({ product, onClose }: { product: UIProduct; onClose: () => vo
             <label>Izoh / status</label>
             <input value={note} onChange={e => setNote(e.target.value)} placeholder="Masalan: sexga chiqib ketti" />
           </div>
-          <div className="field">
-            <label>Miqdor ({product.unit})</label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button className="ghost-button" style={{ padding: '6px 14px' }} onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
-              <input type="number" min="1" max={product.quantity} value={qty} onChange={e => setQty(Number(e.target.value))} style={{ textAlign: 'center', flex: 1 }} />
-              <button className="ghost-button" style={{ padding: '6px 14px' }} onClick={() => setQty(q => Math.min(product.quantity, q + 1))}>+</button>
-            </div>
-          </div>
+          
           {product.rollWidth > 0 && (
-            <div className="field" style={{ background: 'rgba(59,130,246,.08)', padding: 12, borderRadius: 10 }}>
-              <strong style={{ fontSize: 13 }}>= {rollQuantity} rulon</strong>
-              <p className="muted" style={{ fontSize: 11, marginTop: 4 }}>({product.rollWidth} {product.unit} = 1 rulon)</p>
+            <div className="field">
+              <label>Sotish turi</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button 
+                  className={`ghost-button ${sellMode === 'quantity' ? 'active' : ''}`}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: sellMode === 'quantity' ? '2px solid var(--primary)' : '1px solid var(--border)' }}
+                  onClick={() => { setSellMode('quantity'); setQty(1); }}
+                >
+                  {product.unit} bo'yicha
+                </button>
+                <button 
+                  className={`ghost-button ${sellMode === 'rolls' ? 'active' : ''}`}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: sellMode === 'rolls' ? '2px solid var(--primary)' : '1px solid var(--border)' }}
+                  onClick={() => { setSellMode('rolls'); setQty(1); }}
+                >
+                  Rulon bo'yicha
+                </button>
+              </div>
             </div>
           )}
+
+          <div className="field">
+            <label>{sellMode === 'rolls' ? `Rulonlar (1 rulon = ${product.rollWidth} ${product.unit})` : `Miqdor (${product.unit})`}</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button 
+                className="ghost-button" 
+                style={{ padding: '6px 14px' }} 
+                onClick={() => setQty(q => Math.max(1, q - 1))}
+              >
+                −
+              </button>
+              <input 
+                type="number" 
+                min="1" 
+                max={sellMode === 'rolls' ? remainingRolls : product.quantity}
+                value={qty} 
+                onChange={e => setQty(Number(e.target.value))} 
+                style={{ textAlign: 'center', flex: 1 }} 
+              />
+              <button 
+                className="ghost-button" 
+                style={{ padding: '6px 14px' }} 
+                onClick={() => setQty(q => Math.min(sellMode === 'rolls' ? remainingRolls : product.quantity, q + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {product.rollWidth > 0 && (
+            <div className="field" style={{ background: 'rgba(59,130,246,.08)', padding: 12, borderRadius: 10 }}>
+              {sellMode === 'quantity' ? (
+                <>
+                  <strong style={{ fontSize: 13 }}>= {displayRolls} rulon</strong>
+                  <p className="muted" style={{ fontSize: 11, marginTop: 4 }}>({actualQty} {product.unit})</p>
+                </>
+              ) : (
+                <>
+                  <strong style={{ fontSize: 13 }}>{qty} rulon = {actualQty} {product.unit}</strong>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="form-actions" style={{ marginTop: 8 }}>
             <button className="ghost-button" onClick={onClose}>Bekor</button>
-            <button className="primary-button" onClick={handleSell} disabled={loading || qty < 1 || qty > product.quantity}>
+            <button className="primary-button" onClick={handleSell} disabled={loading || qty < 1 || actualQty > product.quantity}>
               {loading ? 'Saqlanmoqda...' : 'Tasdiqlash'}
             </button>
           </div>

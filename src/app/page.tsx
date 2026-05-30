@@ -173,8 +173,8 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
     quantity: product?.quantity ?? 0,
     unit: product?.unit ?? 'dona',
     block: product?.block ?? (state.blocks[0]?.name ?? ''),
-    costPrice: product?.costPrice ?? 0,
-    sellPrice: product?.sellPrice ?? ((product as any)?.price ?? 0),
+    costPrice: product?.costPrice != null ? String(product.costPrice) : '',
+    sellPrice: product?.sellPrice != null ? String(product.sellPrice) : (product ? String((product as any).price ?? '') : ''),
     status: product?.status ?? 'omborda',
     location_note: product?.location_note ?? '',
     rollWidth: product?.rollWidth ?? 0,
@@ -192,8 +192,8 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
         await editProduct(product._id, {
           ...form,
           quantity: Number(form.quantity),
-          costPrice: Number(form.costPrice),
-          sellPrice: Number(form.sellPrice),
+          costPrice: Number(form.costPrice || 0),
+          sellPrice: Number(form.sellPrice || 0),
           status: form.status,
           rollWidth: Number(form.rollWidth),
         });
@@ -201,8 +201,8 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
         await addProduct({
           ...form,
           quantity: Number(form.quantity),
-          costPrice: Number(form.costPrice),
-          sellPrice: Number(form.sellPrice),
+          costPrice: Number(form.costPrice || 0),
+          sellPrice: Number(form.sellPrice || 0),
           status: form.status,
           rollWidth: Number(form.rollWidth),
         });
@@ -259,14 +259,34 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
               )}
             </div>
           </div>
-          <div className="amount-grid">
+            <div className="amount-grid">
             <div className="field">
               <label>Kirish narxi ($)</label>
-              <input type="number" step="0.01" value={form.costPrice} onChange={e => set('costPrice', Number(e.target.value))} placeholder="Masalan: 1.20" />
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.costPrice}
+                onChange={e => {
+                  const v = e.target.value;
+                  const allowed = /^\d*(?:\.\d{0,2})?$/;
+                  if (v === '' || allowed.test(v)) set('costPrice', v);
+                }}
+                placeholder="Masalan: 3.1"
+              />
             </div>
             <div className="field">
               <label>Sotish narxi ($)</label>
-              <input type="number" step="0.01" value={form.sellPrice} onChange={e => set('sellPrice', Number(e.target.value))} placeholder="Masalan: 22.40" />
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.sellPrice}
+                onChange={e => {
+                  const v = e.target.value;
+                  const allowed = /^\d*(?:\.\d{0,2})?$/;
+                  if (v === '' || allowed.test(v)) set('sellPrice', v);
+                }}
+                placeholder="Masalan: 3.1"
+              />
             </div>
           </div>
           <div className="amount-grid">

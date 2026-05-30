@@ -42,6 +42,9 @@ function SellModal({ product, onClose }: { product: UIProduct; onClose: () => vo
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const rollQuantity = product.rollWidth > 0 ? Math.round(qty / product.rollWidth) : 0;
+  const remainingRolls = product.rollWidth > 0 ? Math.round(product.quantity / product.rollWidth) : 0;
+
   const handleSell = async () => {
     if (!seller.trim()) return;
     setLoading(true);
@@ -58,7 +61,7 @@ function SellModal({ product, onClose }: { product: UIProduct; onClose: () => vo
           <div>
             <p className="muted">Sotish</p>
             <h2>{product.name}</h2>
-            <p className="muted" style={{ fontSize: 12 }}>Omborda: <strong>{product.quantity} {product.unit}</strong></p>
+            <p className="muted" style={{ fontSize: 12 }}>Omborda: <strong>{product.quantity} {product.unit}</strong> {product.rollWidth > 0 && `(${remainingRolls} rulon)`}</p>
           </div>
           <button className="icon-button" onClick={onClose}><X /></button>
         </div>
@@ -79,6 +82,12 @@ function SellModal({ product, onClose }: { product: UIProduct; onClose: () => vo
               <button className="ghost-button" style={{ padding: '6px 14px' }} onClick={() => setQty(q => Math.min(product.quantity, q + 1))}>+</button>
             </div>
           </div>
+          {product.rollWidth > 0 && (
+            <div className="field" style={{ background: 'rgba(59,130,246,.08)', padding: 12, borderRadius: 10 }}>
+              <strong style={{ fontSize: 13 }}>= {rollQuantity} rulon</strong>
+              <p className="muted" style={{ fontSize: 11, marginTop: 4 }}>({product.rollWidth} {product.unit} = 1 rulon)</p>
+            </div>
+          )}
           <div className="form-actions" style={{ marginTop: 8 }}>
             <button className="ghost-button" onClick={onClose}>Bekor</button>
             <button className="primary-button" onClick={handleSell} disabled={loading || qty < 1 || qty > product.quantity}>
@@ -105,10 +114,12 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
     sellPrice: product?.sellPrice ?? ((product as any)?.price ?? 0),
     status: product?.status ?? 'omborda',
     location_note: product?.location_note ?? '',
+    rollWidth: product?.rollWidth ?? 0,
   });
   const [loading, setLoading] = useState(false);
 
   const set = (k: string, v: any) => setForm(prev => ({ ...prev, [k]: v }));
+  const rollCount = form.rollWidth > 0 ? Math.round(Number(form.quantity) / Number(form.rollWidth)) : 0;
 
   const handleSubmit = async () => {
     if (!form.name || !form.code || !form.block) return;
@@ -121,6 +132,7 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
           costPrice: Number(form.costPrice),
           sellPrice: Number(form.sellPrice),
           status: form.status,
+          rollWidth: Number(form.rollWidth),
         });
       } else {
         await addProduct({
@@ -129,6 +141,7 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
           costPrice: Number(form.costPrice),
           sellPrice: Number(form.sellPrice),
           status: form.status,
+          rollWidth: Number(form.rollWidth),
         });
       }
       onClose();
@@ -189,6 +202,18 @@ function ProductModal({ product, onClose }: { product?: UIProduct; onClose: () =
           <div className="field">
             <label>Joylashuv eslatmasi</label>
             <input value={form.location_note} onChange={e => set('location_note', e.target.value)} placeholder="Masalan: 3-qator, 2-javon" />
+          </div>
+          <div className="amount-grid">
+            <div className="field">
+              <label>Rulon o'lchami ({form.unit})</label>
+              <input value={form.rollWidth} onChange={e => set('rollWidth', Number(e.target.value))} placeholder="Masalan: 12 (agar 12 ta = 1 rulon)" />
+            </div>
+            <div className="field">
+              <label>Nechta rulon?</label>
+              <div style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)', fontWeight: 600 }}>
+                {rollCount} rulon
+              </div>
+            </div>
           </div>
           <div className="form-actions" style={{ marginTop: 8 }}>
             <button className="ghost-button" onClick={onClose}>Bekor</button>
@@ -463,6 +488,13 @@ export default function Home() {
                         {p.quantity}
                       </strong>
                       <span>{p.unit}</span>
+                      {p.rollWidth > 0 && (
+                        <>
+                          <strong style={{ fontSize: 11, color: 'var(--primary)', marginTop: 2, display: 'block' }}>
+                            {p.rollCount} rulon
+                          </strong>
+                        </>
+                      )}
                     </div>
                     <button className="product-action" onClick={() => setSellTarget(p)}>Sotish</button>
                     {role === 'admin' && (

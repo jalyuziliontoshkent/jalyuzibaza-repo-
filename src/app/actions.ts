@@ -1,9 +1,9 @@
 'use server';
 
-import connectToDatabase from './mongoose';
-import { Block } from '../models/Block';
-import { Product } from '../models/Product';
-import { Sale } from '../models/Sale';
+import connectToDatabase from '@/lib/mongoose';
+import { Block } from '@/models/Block';
+import { Product } from '@/models/Product';
+import { Sale } from '@/models/Sale';
 import { revalidatePath } from 'next/cache';
 
 // ─── BLOCKS ───────────────────────────────────────────────────────────────────
@@ -44,12 +44,18 @@ export async function deleteBlock(id: string) {
 export async function getProducts() {
   await connectToDatabase();
   const products = await Product.find({}).sort({ createdAt: -1 }).lean();
-  return JSON.parse(JSON.stringify(products)).map((product: any) => ({
-    ...product,
-    costPrice: product.costPrice ?? 0,
-    sellPrice: product.sellPrice ?? product.price ?? 0,
-    status: product.status ?? 'omborda',
-  }));
+  return JSON.parse(JSON.stringify(products)).map((product: any) => {
+    const rollWidth = product.rollWidth ?? 0;
+    const rollCount = rollWidth > 0 ? Math.round(product.quantity / rollWidth) : 0;
+    return {
+      ...product,
+      costPrice: product.costPrice ?? 0,
+      sellPrice: product.sellPrice ?? product.price ?? 0,
+      status: product.status ?? 'omborda',
+      rollWidth,
+      rollCount,
+    };
+  });
 }
 
 export async function postProduct(payload: {
@@ -62,6 +68,7 @@ export async function postProduct(payload: {
   costPrice: number;
   sellPrice: number;
   status: string;
+  rollWidth?: number;
 }) {
   await connectToDatabase();
   const exists = await Product.findOne({ code: payload.code });
@@ -71,6 +78,7 @@ export async function postProduct(payload: {
     quantity: Number(payload.quantity),
     costPrice: Number(payload.costPrice ?? 0),
     sellPrice: Number(payload.sellPrice ?? 0),
+    rollWidth: Number(payload.rollWidth ?? 0),
   });
   await newProduct.save();
   revalidatePath('/');
@@ -86,9 +94,10 @@ export async function putProduct(id: string, payload: {
   costPrice?: number;
   sellPrice?: number;
   status?: string;
+  rollWidth?: number;
 }) {
   await connectToDatabase();
-  await Product.findByIdAndUpdate(id, { ...payload, quantity: Number(payload.quantity ?? 0), costPrice: Number(payload.costPrice ?? 0), sellPrice: Number(payload.sellPrice ?? 0) }, { new: true });
+  await Product.findByIdAndUpdate(id, { ...payload, quantity: Number(payload.quantity ?? 0), costPrice: Number(payload.costPrice ?? 0), sellPrice: Number(payload.sellPrice ?? 0), rollWidth: Number(payload.rollWidth ?? 0) }, { new: true });
   revalidatePath('/');
 }
 

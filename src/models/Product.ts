@@ -10,6 +10,7 @@ export interface IProduct extends Document {
   costPrice: number;
   sellPrice: number;
   status: string;
+  rollWidth?: number;
 }
 
 const ProductSchema: Schema = new Schema({
@@ -22,6 +23,7 @@ const ProductSchema: Schema = new Schema({
   costPrice: { type: Number, required: false, default: 0, min: 0 },
   sellPrice: { type: Number, required: false, default: 0, min: 0 },
   status: { type: String, required: false, default: 'omborda' },
+  rollWidth: { type: Number, required: false, default: 0, min: 0 },
 });
 
 export const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);

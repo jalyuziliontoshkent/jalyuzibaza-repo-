@@ -7,7 +7,7 @@ import {
   postProduct, putProduct, deleteProduct,
   recordSale as apiRecordSale,
   clearSales as apiClearSales,
-} from './api';
+} from '@/app/actions';
 
 export interface UIBlock {
   _id: string;
@@ -28,6 +28,8 @@ export interface UIProduct {
   costPrice: number;
   sellPrice: number;
   status: string;
+  rollWidth: number;
+  rollCount: number;
 }
 
 export interface UISale {
@@ -71,8 +73,8 @@ interface StoreContextType {
   editBlock: (id: string, payload: { name?: string; description?: string; priority?: string; color?: string }) => Promise<void>;
   removeBlock: (id: string) => Promise<void>;
   // Product actions
-  addProduct: (payload: { name: string; code: string; quantity: number; unit: string; block: string; location_note: string; costPrice: number; sellPrice: number; status: string }) => Promise<void>;
-  editProduct: (id: string, payload: { name?: string; code?: string; quantity?: number; unit?: string; block?: string; location_note?: string; costPrice?: number; sellPrice?: number; status?: string }) => Promise<void>;
+  addProduct: (payload: { name: string; code: string; quantity: number; unit: string; block: string; location_note: string; costPrice: number; sellPrice: number; status: string; rollWidth: number }) => Promise<void>;
+  editProduct: (id: string, payload: { name?: string; code?: string; quantity?: number; unit?: string; block?: string; location_note?: string; costPrice?: number; sellPrice?: number; status?: string; rollWidth?: number }) => Promise<void>;
   removeProduct: (id: string) => Promise<void>;
   // Sale actions
   recordSale: (productId: string, quantity: number, sellerName: string, note: string) => Promise<void>;
@@ -150,7 +152,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // ── Product actions ────────────────────────────────────────────
-  const addProduct = async (payload: { name: string; code: string; quantity: number; unit: string; block: string; location_note: string; costPrice: number; sellPrice: number; status: string }) => {
+  const addProduct = async (payload: { name: string; code: string; quantity: number; unit: string; block: string; location_note: string; costPrice: number; sellPrice: number; status: string; rollWidth: number }) => {
     setState(prev => ({ ...prev, loading: true }));
     try {
       await postProduct(payload);
@@ -163,7 +165,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const editProduct = async (id: string, payload: { name?: string; code?: string; quantity?: number; unit?: string; block?: string; location_note?: string; costPrice?: number; sellPrice?: number; status?: string }) => {
+  const editProduct = async (id: string, payload: { name?: string; code?: string; quantity?: number; unit?: string; block?: string; location_note?: string; costPrice?: number; sellPrice?: number; status?: string; rollWidth?: number }) => {
     setState(prev => ({ ...prev, loading: true }));
     try {
       await putProduct(id, payload);
